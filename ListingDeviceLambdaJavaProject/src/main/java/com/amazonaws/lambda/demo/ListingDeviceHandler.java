@@ -1,0 +1,60 @@
+package com.amazonaws.lambda.demo;
+
+import java.util.List;
+import com.amazonaws.services.iot.AWSIot;
+import com.amazonaws.services.iot.AWSIotClientBuilder;
+import com.amazonaws.services.iot.model.ListThingsRequest;
+import com.amazonaws.services.iot.model.ListThingsResult;
+import com.amazonaws.services.iot.model.ThingAttribute;
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+
+public class ListingDeviceHandler implements RequestHandler<Object, String> {
+
+    @Override
+    public String handleRequest(Object input, Context context) {
+
+        // AWSIot 객체를 얻는다. 
+        AWSIot iot = AWSIotClientBuilder.standard().build();
+
+        // ListThingsRequest 객체 설정. 
+        ListThingsRequest listThingsRequest = new ListThingsRequest();
+
+        // listThings 메소드 호출하여 결과 얻음. 
+        ListThingsResult result = iot.listThings(listThingsRequest);
+
+        // result 객체로부터 API 응답모델 문자열 생성하여 반
+        return getResponse(result);
+    }
+
+    /**
+     * ListThingsResult 객체인 result로 부터 ThingName과 ThingArn을 얻어서 Json문자 형식의
+     * 응답모델을 만들어 반환한다.
+     * {
+     *  "things": [ 
+     *       { 
+     *          "thingName": "string",
+     *          "thingArn": "string"
+     *       },
+     *       ...
+     *     ]
+     * }
+     */
+    private String getResponse(ListThingsResult result) {
+        List<ThingAttribute> things = result.getThings(); // 파라미터로 들어온 result객체를 뽑아서
+        
+        // 앞에서 정의한 응답형태로 문자열을 만들어서 반환
+        String response = "{ \"things\": [";
+        for (int i =0; i<things.size(); i++) {
+            if (i!=0) 
+                response +=",";
+            response += String.format("{\"thingName\":\"%s\", \"thingArn\":\"%s\"}", 
+                                                things.get(i).getThingName(),
+                                                things.get(i).getThingArn());
+
+        }
+        response += "]}";
+        return response;
+    }
+
+}
